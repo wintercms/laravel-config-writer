@@ -180,7 +180,7 @@ class ArrayFile implements DataFileInterface
      */
     protected function makeArrayItem(string $key, string $valueType, $value): ArrayItem
     {
-        return (str_contains($key, '.'))
+        return (strpos($key, '.') !== false)
             ? $this->makeAstArrayRecursive($key, $valueType, $value)
             : new ArrayItem(
                 $this->makeAstNode($valueType, $value),
