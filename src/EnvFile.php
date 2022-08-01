@@ -1,8 +1,8 @@
 <?php
 
-namespace Winter\LaravelConfig;
+namespace Winter\LaravelConfigWriter;
 
-use Winter\LaravelConfig\Contracts\DataFileInterface;
+use Winter\LaravelConfigWriter\Contracts\DataFileInterface;
 
 /**
  * Class EnvFile

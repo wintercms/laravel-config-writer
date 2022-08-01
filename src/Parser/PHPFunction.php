@@ -1,6 +1,6 @@
 <?php
 
-namespace Winter\LaravelConfig\Parser;
+namespace Winter\LaravelConfigWriter\Parser;
 
 /**
  * Used with ArrayFile to inject a function call into a PHP array file

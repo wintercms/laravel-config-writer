@@ -1,9 +1,9 @@
 <?php
 
-namespace Winter\LaravelConfig\Tests;
+namespace Winter\LaravelConfigWriter\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Winter\LaravelConfig\EnvFile;
+use Winter\LaravelConfigWriter\EnvFile;
 
 class EnvFileTest extends TestCase
 {

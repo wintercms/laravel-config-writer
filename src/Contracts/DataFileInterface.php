@@ -1,6 +1,6 @@
 <?php
 
-namespace Winter\LaravelConfig\Contracts;
+namespace Winter\LaravelConfigWriter\Contracts;
 
 interface DataFileInterface
 {

@@ -19,10 +19,10 @@ composer require winter/laravel-config-writer
 
 ### PHP array files
 
-You can modify Laravel-style PHP configuration files - PHP files that return a single array - by using the `Winter\LaravelConfig\ArrayFile` class. Use the `open` method to open an existing file for modification, or to create a new config file.
+You can modify Laravel-style PHP configuration files - PHP files that return a single array - by using the `Winter\LaravelConfigWriter\ArrayFile` class. Use the `open` method to open an existing file for modification, or to create a new config file.
 
 ```php
-use Winter\LaravelConfig\ArrayFile;
+use Winter\LaravelConfigWriter\ArrayFile;
 
 $config = ArrayFile::open(base_path('config/app.php'));
 ```
@@ -110,10 +110,10 @@ $config->sort(ArrayFile::SORT_DESC);
 
 ### Environment files
 
-This utility library also allows manipulation of environment files, typically found as `.env` files in a project. The `Winter\LaravelConfig\EnvFile::open()` method allows you to open or create an environment file for modification.
+This utility library also allows manipulation of environment files, typically found as `.env` files in a project. The `Winter\LaravelConfigWriter\EnvFile::open()` method allows you to open or create an environment file for modification.
 
 ```php
-use Winter\LaravelConfig\EnvFile;
+use Winter\LaravelConfigWriter\EnvFile;
 
 $config = EnvFile::open(base_path('.env'));
 ```

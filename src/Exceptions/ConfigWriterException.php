@@ -1,6 +1,6 @@
 <?php
 
-namespace Winter\LaravelConfig\Exceptions;
+namespace Winter\LaravelConfigWriter\Exceptions;
 
 class ConfigWriterException extends \Exception
 {

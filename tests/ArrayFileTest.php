@@ -1,9 +1,9 @@
 <?php
 
-namespace Winter\LaravelConfig\Tests;
+namespace Winter\LaravelConfigWriter\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Winter\LaravelConfig\ArrayFile;
+use Winter\LaravelConfigWriter\ArrayFile;
 
 class ArrayFileTest extends TestCase
 {
@@ -441,7 +441,7 @@ PHP;
         $file = __DIR__ . '/fixtures/array/empty.php';
         $arrayFile = ArrayFile::open($file);
 
-        $this->expectException(\Winter\LaravelConfig\Exceptions\ConfigWriterException::class);
+        $this->expectException(\Winter\LaravelConfigWriter\Exceptions\ConfigWriterException::class);
 
         $arrayFile->set([
             'w.i.n.t.e.r' => 'Winter CMS',
@@ -536,7 +536,7 @@ PHP;
         ]);
 
         $arrayFile->set([
-            'curl_return' => new \Winter\LaravelConfig\Parser\PHPConstant('CURLOPT_RETURNTRANSFER')
+            'curl_return' => new \Winter\LaravelConfigWriter\Parser\PHPConstant('CURLOPT_RETURNTRANSFER')
         ]);
 
         $expected = <<<PHP
@@ -607,7 +607,7 @@ PHP;
         ]);
 
         $arrayFile->set([
-            'key2' => new \Winter\LaravelConfig\Parser\PHPFunction('nl2br', ['KEY_B', false])
+            'key2' => new \Winter\LaravelConfigWriter\Parser\PHPFunction('nl2br', ['KEY_B', false])
         ]);
 
         $expected = <<<PHP
@@ -633,7 +633,7 @@ PHP;
         ]);
 
         $arrayFile->set([
-            'key' => new \Winter\LaravelConfig\Parser\PHPFunction('nl2br', ['KEY_B', false])
+            'key' => new \Winter\LaravelConfigWriter\Parser\PHPFunction('nl2br', ['KEY_B', false])
         ]);
 
         $expected = <<<PHP
