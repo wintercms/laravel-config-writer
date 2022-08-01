@@ -1,0 +1,36 @@
+{
+    "name": "winter/laravel-config-writer",
+    "description": "Utility to create and update Laravel config and .env files",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jack Wilkinson",
+            "email": "me@jaxwilko.com",
+            "role": "Original author"
+        },
+        {
+            "name": "Winter CMS Maintainers",
+            "homepage": "https://wintercms.com",
+            "role": "Maintainers"
+        }
+    ],
+    "require": {
+        "php": "^7.4.0 || ^8.0",
+        "nikic/php-parser": "^4.10"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.6",
+        "phpunit/phpunit": "^9.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Winter\\LaravelConfig\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Winter\\LaravelConfig\\Tests\\": "tests/"
+        }
+    }
+}

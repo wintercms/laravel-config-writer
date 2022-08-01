@@ -1,0 +1,7 @@
+parameters:
+    level: 6
+    paths:
+        - src
+    ignoreErrors:
+        - message: '#Access to an undefined property.*?\$expr#'
+          path: src/ArrayFile.php
