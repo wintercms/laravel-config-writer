@@ -40,8 +40,10 @@ class EnvFile implements DataFileInterface
 
     /**
      * Return a new instance of `EnvFile` ready for modification of the file.
+     *
+     * @return static
      */
-    public static function open(string $filePath): static
+    public static function open(string $filePath)
     {
         return new static($filePath);
     }
@@ -57,8 +59,11 @@ class EnvFile implements DataFileInterface
      *     'DIF_PROPERTY' => 'example'
      * ]);
      * ```
+     * @param string|array<string|int, mixed> $key
+     * @param mixed $value
+     * @return static
      */
-    public function set(array|string $key, $value = null): static
+    public function set($key, $value = null)
     {
         if (is_array($key)) {
             foreach ($key as $item => $value) {

@@ -43,7 +43,7 @@ class ArrayFile implements DataFileInterface
     /**
      * Printer used to define output syntax
      */
-    protected ArrayPrinter|null $printer = null;
+    protected ?ArrayPrinter $printer = null;
 
     /**
      * Index of ast containing return stmt
@@ -74,8 +74,9 @@ class ArrayFile implements DataFileInterface
      *
      * @throws \InvalidArgumentException if the provided path doesn't exist and $throwIfMissing is true
      * @throws ConfigWriterException if the provided path is unable to be parsed
+     * @return static
      */
-    public static function open(string $filePath, bool $throwIfMissing = false): static
+    public static function open(string $filePath, bool $throwIfMissing = false)
     {
         $exists = file_exists($filePath);
 
@@ -118,8 +119,12 @@ class ArrayFile implements DataFileInterface
      *     'property.key2.value' => 'example'
      * ]);
      * ```
+     *
+     * @param string|array<string|int, mixed> $key
+     * @param mixed $value
+     * @return static
      */
-    public function set(string|array $key, $value = null): static
+    public function set($key, $value = null)
     {
         if (is_array($key)) {
             foreach ($key as $name => $value) {
