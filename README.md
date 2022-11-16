@@ -115,19 +115,19 @@ This utility library also allows manipulation of environment files, typically fo
 ```php
 use Winter\LaravelConfigWriter\EnvFile;
 
-$config = EnvFile::open(base_path('.env'));
+$env = EnvFile::open(base_path('.env'));
 ```
 
 You can set values using the `set` method. This method can be used fluently, or can be called with a single key and value or an array of keys and values.
 
 ```php
-$config->set('APP_NAME', 'Winter CMS');
+$env->set('APP_NAME', 'Winter CMS');
 
-$config
+$env
     ->set('APP_URL', 'https://wintercms.com')
     ->set('APP_ENV', 'production');
 
-$config->set([
+$env->set([
     'DB_CONNECTION' => 'sqlite',
     'DB_DATABASE' => 'database.sqlite',
 ]);
@@ -146,19 +146,19 @@ $env->set('BAR', 'foo');
 To finalise all your changes, use the `write` method to write the changes to the open file.
 
 ```php
-$config->write();
+$env->write();
 ```
 
 If desired, you may also write the changes to another file altogether.
 
 ```php
-$config->write(base_path('.env.local'));
+$env->write(base_path('.env.local'));
 ```
 
 Or you can simply render the changes as a string.
 
 ```php
-$config->render();
+$env->render();
 ```
 
 ## License
