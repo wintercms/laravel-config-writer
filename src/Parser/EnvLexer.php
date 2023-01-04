@@ -54,15 +54,6 @@ class EnvLexer implements DataFileLexerInterface
 
             switch ($name) {
                 case static::T_ENV:
-                    return [
-                        'match' => $matches[0],
-                        'env' => [
-                            'key' => $matches[1],
-                            'value' => trim($matches[2]),
-                        ],
-                        'token' => $name,
-                        'line' => $line + 1
-                    ];
                 case static::T_QUOTED_ENV:
                     return [
                         'match' => $matches[0],
