@@ -16,7 +16,7 @@ class EnvFile implements DataFileInterface
     /**
      * Lines of env data
      *
-     * @var array<int, array<int, mixed>>
+     * @var array<int, array>
      */
     protected array $ast = [];
 
