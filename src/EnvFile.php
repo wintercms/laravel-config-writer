@@ -3,6 +3,10 @@
 namespace Winter\LaravelConfigWriter;
 
 use Winter\LaravelConfigWriter\Contracts\DataFileInterface;
+use Winter\LaravelConfigWriter\Contracts\DataFileLexerInterface;
+use Winter\LaravelConfigWriter\Contracts\DataFilePrinterInterface;
+use Winter\LaravelConfigWriter\Parser\EnvLexer;
+use Winter\LaravelConfigWriter\Printer\EnvPrinter;
 
 /**
  * Class EnvFile
@@ -12,16 +16,23 @@ class EnvFile implements DataFileInterface
     /**
      * Lines of env data
      *
-     * @var array<int, array<string|int, mixed>>
+     * @var array<int, array<int, mixed>>
      */
-    protected array $env = [];
+    protected array $ast = [];
 
     /**
-     * Map of variable names to line indexes
+     * Env file lexer, used to generate ast from src
      *
-     * @var array<string, int>
+     * @var DataFileLexerInterface
      */
-    protected array $map = [];
+    protected DataFileLexerInterface $lexer;
+
+    /**
+     * Env file printer to convert the ast back to a string
+     *
+     * @var DataFilePrinterInterface
+     */
+    protected DataFilePrinterInterface $printer;
 
     /**
      * Filepath currently being worked on
@@ -31,11 +42,15 @@ class EnvFile implements DataFileInterface
     /**
      * EnvFile constructor
      */
-    final public function __construct(string $filePath)
-    {
+    final public function __construct(
+        string $filePath,
+        DataFileLexerInterface $lexer = null,
+        DataFilePrinterInterface $printer = null
+    ) {
         $this->filePath = $filePath;
-
-        list($this->env, $this->map) = $this->parse($filePath);
+        $this->lexer = $lexer ?? new EnvLexer();
+        $this->printer = $printer ?? new EnvPrinter();
+        $this->ast = $this->parse($this->filePath);
     }
 
     /**
@@ -72,19 +87,42 @@ class EnvFile implements DataFileInterface
             return $this;
         }
 
-        if (!isset($this->map[$key])) {
-            $this->env[] = [
-                'type' => 'var',
-                'key' => $key,
-                'value' => $value
-            ];
+        foreach ($this->ast as $index => $item) {
+            if (
+                !in_array($item['token'], [
+                    $this->lexer::T_ENV,
+                    $this->lexer::T_QUOTED_ENV,
+                    $this->lexer::T_ENV_NO_VALUE
+                ])
+            ) {
+                continue;
+            }
 
-            $this->map[$key] = count($this->env) - 1;
+            if ($item['env']['key'] === $key) {
+                $this->ast[$index]['env']['value'] = $this->castValue($value);
+                // Reprocess the token type to ensure old casting rules are still applied
+                $this->ast[$index]['token'] = (
+                    is_numeric($value)
+                    || is_bool($value)
+                    || is_null($value)
+                    || (is_string($value) && !str_contains($value, ' ') && $item['token'] === $this->lexer::T_ENV)
+                ) ? $this->lexer::T_ENV : $this->lexer::T_QUOTED_ENV;
 
-            return $this;
+                return $this;
+            }
         }
 
-        $this->env[$this->map[$key]]['value'] = $value;
+        // We did not find the key in the AST, therefore we must create it
+        $this->ast[] = [
+            'token' => (is_numeric($value) || is_bool($value)) ? $this->lexer::T_ENV : $this->lexer::T_QUOTED_ENV,
+            'env' => [
+                'key' => $key,
+                'value' => $this->castValue($value)
+            ]
+        ];
+
+        // Add a new line
+        $this->addEmptyLine();
 
         return $this;
     }
@@ -94,15 +132,16 @@ class EnvFile implements DataFileInterface
      */
     public function addEmptyLine(): EnvFile
     {
-        $this->env[] = [
-            'type' => 'nl'
+        $this->ast[] = [
+            'match' => PHP_EOL,
+            'token' => $this->lexer::T_WHITESPACE,
         ];
 
         return $this;
     }
 
     /**
-     * Write the current env lines to a fileh
+     * Write the current env lines to a file
      */
     public function write(string $filePath = null): void
     {
@@ -118,55 +157,7 @@ class EnvFile implements DataFileInterface
      */
     public function render(): string
     {
-        $out = '';
-        foreach ($this->env as $env) {
-            switch ($env['type']) {
-                case 'comment':
-                    $out .= $env['value'];
-                    break;
-                case 'var':
-                    $out .= $env['key'] . '=' . $this->escapeValue($env['value']);
-                    break;
-            }
-
-            $out .= PHP_EOL;
-        }
-
-        return $out;
-    }
-
-    /**
-     * Wrap a value in quotes if needed
-     *
-     * @param mixed $value
-     */
-    protected function escapeValue($value): string
-    {
-        if (is_numeric($value)) {
-            return $value;
-        }
-
-        if ($value === true) {
-            return 'true';
-        }
-
-        if ($value === false) {
-            return 'false';
-        }
-
-        if ($value === null) {
-            return 'null';
-        }
-
-        switch ($value) {
-            case 'true':
-            case 'false':
-            case 'null':
-                return $value;
-            default:
-                // addslashes() wont work as it'll escape single quotes and they will be read literally
-                return '"' . str_replace('"', '\"', $value) . '"';
-        }
+        return $this->printer->render($this->ast);
     }
 
     /**
@@ -177,57 +168,12 @@ class EnvFile implements DataFileInterface
     protected function parse(string $filePath): array
     {
         if (!is_file($filePath)) {
-            return [[], []];
+            return [];
         }
 
         $contents = file($filePath);
-        if (empty($contents)) {
-            return [[], []];
-        }
 
-        $env = [];
-        $map = [];
-
-        foreach ($contents as $line) {
-            $type = !($line = trim($line))
-                ? 'nl'
-                : (
-                    (substr($line, 0, 1) === '#')
-                        ? 'comment'
-                        : 'var'
-                );
-
-            $entry = [
-                'type' => $type
-            ];
-
-            if ($type === 'var') {
-                if (strpos($line, '=') === false) {
-                    // if we cannot split the string, handle it the same as a comment
-                    // i.e. inject it back into the file as is
-                    $entry['type'] = $type = 'comment';
-                } else {
-                    list($key, $value) = explode('=', $line);
-                    $entry['key'] = trim($key);
-                    $entry['value'] = trim($value, '"');
-                }
-            }
-
-            if ($type === 'comment') {
-                $entry['value'] = $line;
-            }
-
-            $env[] = $entry;
-        }
-
-        foreach ($env as $index => $item) {
-            if ($item['type'] !== 'var') {
-                continue;
-            }
-            $map[$item['key']] = $index;
-        }
-
-        return [$env, $map];
+        return $this->lexer->parse($contents);
     }
 
     /**
@@ -239,13 +185,41 @@ class EnvFile implements DataFileInterface
     {
         $env = [];
 
-        foreach ($this->env as $item) {
-            if ($item['type'] !== 'var') {
+        foreach ($this->ast as $item) {
+            if (
+                !in_array($item['token'], [
+                    $this->lexer::T_ENV,
+                    $this->lexer::T_QUOTED_ENV
+                ])
+            ) {
                 continue;
             }
-            $env[$item['key']] = $item['value'];
+
+            $env[$item['env']['key']] = $item['env']['value'];
         }
 
         return $env;
+    }
+
+    /**
+     * Cast values to strings
+     *
+     * @param mixed $value
+     */
+    protected function castValue($value): string
+    {
+        if (is_null($value)) {
+            return 'null';
+        }
+
+        if ($value === true) {
+            return 'true';
+        }
+
+        if ($value === false) {
+            return 'false';
+        }
+
+        return str_replace('"', '\"', $value);
     }
 }
