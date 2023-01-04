@@ -195,7 +195,7 @@ class EnvFile implements DataFileInterface
                 continue;
             }
 
-            $env[$item['env']['key']] = $item['env']['value'];
+            $env[$item['env']['key']] = trim($item['env']['value']);
         }
 
         return $env;
