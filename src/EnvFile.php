@@ -105,7 +105,7 @@ class EnvFile implements DataFileInterface
                     is_numeric($value)
                     || is_bool($value)
                     || is_null($value)
-                    || (is_string($value) && !str_contains($value, ' ') && $item['token'] === $this->lexer::T_ENV)
+                    || (is_string($value) && strpos($value, ' ') === false && $item['token'] === $this->lexer::T_ENV)
                 ) ? $this->lexer::T_ENV : $this->lexer::T_QUOTED_ENV;
 
                 return $this;
