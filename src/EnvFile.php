@@ -14,13 +14,6 @@ use Winter\LaravelConfigWriter\Printer\EnvPrinter;
 class EnvFile extends DataFile implements DataFileInterface
 {
     /**
-     * Lines of env data
-     *
-     * @var array<int, array>
-     */
-    protected array $ast = [];
-
-    /**
      * Env file lexer, used to generate ast from src
      *
      * @var DataFileLexerInterface

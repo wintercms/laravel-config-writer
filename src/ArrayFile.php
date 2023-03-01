@@ -26,11 +26,6 @@ class ArrayFile extends DataFile implements DataFileInterface
     const SORT_DESC = 'desc';
 
     /**
-     * @var Stmt[]|null Abstract syntax tree produced by `PhpParser`
-     */
-    protected ?array $ast = null;
-
-    /**
      * Lexer for use by `PhpParser`
      */
     protected ?Lexer $lexer = null;
