@@ -11,7 +11,7 @@ use Winter\LaravelConfigWriter\Printer\EnvPrinter;
 /**
  * Class EnvFile
  */
-class EnvFile implements DataFileInterface
+class EnvFile extends DataFile implements DataFileInterface
 {
     /**
      * Lines of env data
@@ -88,25 +88,37 @@ class EnvFile implements DataFileInterface
         }
 
         foreach ($this->ast as $index => $item) {
-            if (
-                !in_array($item['token'], [
-                    $this->lexer::T_ENV,
-                    $this->lexer::T_QUOTED_ENV,
-                    $this->lexer::T_ENV_NO_VALUE
-                ])
-            ) {
+            // Skip all but keys
+            if ($item['token'] !== $this->lexer::T_ENV) {
                 continue;
             }
 
-            if ($item['env']['key'] === $key) {
-                $this->ast[$index]['env']['value'] = $this->castValue($value);
+            if ($item['value'] === $key) {
+                if (
+                    !isset($this->ast[$index + 1])
+                    || !in_array($this->ast[$index + 1]['token'], [$this->lexer::T_VALUE, $this->lexer::T_QUOTED_VALUE])
+                ) {
+                    throw new \Exception('jack go fix');
+                }
+
+                $this->ast[$index + 1]['value'] = $this->castValue($value);
+
                 // Reprocess the token type to ensure old casting rules are still applied
-                $this->ast[$index]['token'] = (
-                    is_numeric($value)
-                    || is_bool($value)
-                    || is_null($value)
-                    || (is_string($value) && strpos($value, ' ') === false && $item['token'] === $this->lexer::T_ENV)
-                ) ? $this->lexer::T_ENV : $this->lexer::T_QUOTED_ENV;
+                switch ($this->ast[$index + 1]['token']) {
+                    case $this->lexer::T_VALUE:
+                        if (
+                            str_contains($this->ast[$index + 1]['value'], '"')
+                            || str_contains($this->ast[$index + 1]['value'], '\'')
+                        ) {
+                            $this->ast[$index + 1]['token'] = $this->lexer::T_QUOTED_VALUE;
+                        }
+                        break;
+                    case $this->lexer::T_QUOTED_VALUE:
+                        if (is_null($value) || $value === true || $value === false) {
+                            $this->ast[$index + 1]['token'] = $this->lexer::T_VALUE;
+                        }
+                        break;
+                }
 
                 return $this;
             }
@@ -114,11 +126,12 @@ class EnvFile implements DataFileInterface
 
         // We did not find the key in the AST, therefore we must create it
         $this->ast[] = [
-            'token' => (is_numeric($value) || is_bool($value)) ? $this->lexer::T_ENV : $this->lexer::T_QUOTED_ENV,
-            'env' => [
-                'key' => $key,
-                'value' => $this->castValue($value)
-            ]
+            'token' => $this->lexer::T_ENV,
+            'value' => $key
+        ];
+        $this->ast[] = [
+            'token' => (is_numeric($value) || is_bool($value)) ? $this->lexer::T_VALUE : $this->lexer::T_QUOTED_VALUE,
+            'value' => $this->castValue($value)
         ];
 
         // Add a new line
@@ -171,7 +184,7 @@ class EnvFile implements DataFileInterface
             return [];
         }
 
-        $contents = file($filePath);
+        $contents = file_get_contents($filePath);
 
         return $this->lexer->parse($contents);
     }
@@ -185,17 +198,19 @@ class EnvFile implements DataFileInterface
     {
         $env = [];
 
-        foreach ($this->ast as $item) {
-            if (
-                !in_array($item['token'], [
-                    $this->lexer::T_ENV,
-                    $this->lexer::T_QUOTED_ENV
-                ])
-            ) {
+        foreach ($this->ast as $index => $item) {
+            if ($item['token'] !== $this->lexer::T_ENV) {
                 continue;
             }
 
-            $env[$item['env']['key']] = trim($item['env']['value']);
+            if (!(
+                isset($this->ast[$index + 1])
+                && in_array($this->ast[$index + 1]['token'], [$this->lexer::T_VALUE, $this->lexer::T_QUOTED_VALUE])
+            )) {
+                continue;
+            }
+
+            $env[$item['value']] = trim($this->ast[$index + 1]['value']);
         }
 
         return $env;

@@ -8,37 +8,49 @@ use Winter\LaravelConfigWriter\Exceptions\EnvParserException;
 class EnvLexer implements DataFileLexerInterface
 {
     protected $tokenMap = [
-        '/^([\w]*)="?(.+)["|$]/'      => self::T_QUOTED_ENV,
-        '/^([\w]*)="?(.*)(?:"|$)/'    => self::T_ENV,
-        '/^(\w+)/'                    => self::T_ENV_NO_VALUE,
-        '/^(\s+)/'                    => self::T_WHITESPACE,
-        '/(#[\w\s]).*/'               => self::T_COMMENT,
+        '/^(\s+)/'                           => self::T_WHITESPACE,
+        '/^(#.*)/'                           => self::T_COMMENT,
+        '/^(\w+)/s'                          => self::T_ENV,
+        '/^="([^"\\\]*(?:\\\.[^"\\\]*)*)"/s' => self::T_QUOTED_VALUE,
+        '/^\=(.*)/'                          => self::T_VALUE,
     ];
 
-    public function parse(array $src): array
+    /**
+     * Parses an array of lines into an AST
+     *
+     * @param string $string
+     * @return array|array[]
+     * @throws EnvParserException
+     */
+    public function parse(string $string): array
     {
         $tokens = [];
+        $offset = 0;
+        do {
+            $result = $this->match($string, $offset);
 
-        foreach ($src as $line => $str) {
-            $read = 0;
-            do {
-                $result = $this->match($str, $line, $read);
+            if (is_null($result)) {
+                throw new EnvParserException("Unable to parse file, failed at: " . $offset . ".");
+            }
 
-                if (is_null($result)) {
-                    throw new EnvParserException("Unable to parse line " . ($line + 1) . ".");
-                }
+            $tokens[] = $result;
 
-                $tokens[] = $result;
-
-                $read += strlen($result['match']);
-            } while ($read < strlen($str));
-        }
+            $offset += strlen($result['match']);
+        } while ($offset < strlen($string));
 
         return $tokens;
     }
 
-    public function match(string $str, int $line, int $offset): ?array
+    /**
+     * Parse a string against our token map and return a node
+     *
+     * @param string $str
+     * @param int $offset
+     * @return array|null
+     */
+    public function match(string $str, int $offset): ?array
     {
+        $source = $str;
         $str = substr($str, $offset);
 
         foreach ($this->tokenMap as $pattern => $name) {
@@ -48,37 +60,22 @@ class EnvLexer implements DataFileLexerInterface
 
             switch ($name) {
                 case static::T_ENV:
-                case static::T_QUOTED_ENV:
+                case static::T_VALUE:
+                case static::T_QUOTED_VALUE:
                     return [
                         'match' => $matches[0],
-                        'env' => [
-                            'key' => $matches[1],
-                            'value' => $matches[2],
-                        ],
+                        'value' => $matches[1] ?? '',
                         'token' => $name,
-                        'line' => $line + 1
-                    ];
-                case static::T_ENV_NO_VALUE:
-                    return [
-                        'match' => $matches[0],
-                        'env' => [
-                            'key' => $matches[1],
-                            'value' => '',
-                        ],
-                        'token' => $name,
-                        'line' => $line + 1
                     ];
                 case static::T_COMMENT:
                     return [
                         'match' => $matches[0],
                         'token' => $name,
-                        'line' => $line + 1
                     ];
                 case static::T_WHITESPACE:
                     return [
                         'match' => $matches[1],
                         'token' => $name,
-                        'line' => $line + 1
                     ];
             }
         }

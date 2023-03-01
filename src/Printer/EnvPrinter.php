@@ -14,13 +14,13 @@ class EnvPrinter implements DataFilePrinterInterface
         foreach ($ast as $item) {
             switch ($item['token']) {
                 case EnvLexer::T_ENV:
-                    $output .= sprintf('%s=%s', $item['env']['key'], $item['env']['value']);
+                    $output .= $item['value'];
                     break;
-                case EnvLexer::T_QUOTED_ENV:
-                    $output .= sprintf('%s="%s"', $item['env']['key'], $item['env']['value']);
+                case EnvLexer::T_VALUE:
+                    $output .= sprintf('=%s', $item['value']);
                     break;
-                case EnvLexer::T_ENV_NO_VALUE:
-                    $output .= $item['env']['key'];
+                case EnvLexer::T_QUOTED_VALUE:
+                    $output .= sprintf('="%s"', $item['value']);
                     break;
                 case EnvLexer::T_COMMENT:
                 case EnvLexer::T_WHITESPACE:
