@@ -20,7 +20,7 @@ use Winter\LaravelConfigWriter\Parser\PHPConstant;
 use Winter\LaravelConfigWriter\Parser\PHPFunction;
 use Winter\LaravelConfigWriter\Printer\ArrayPrinter;
 
-class ArrayFile implements DataFileInterface
+class ArrayFile extends DataFile implements DataFileInterface
 {
     const SORT_ASC = 'asc';
     const SORT_DESC = 'desc';
@@ -442,15 +442,5 @@ class ArrayFile implements DataFileInterface
     public function render(): string
     {
         return $this->printer->render($this->ast, $this->lexer) . "\n";
-    }
-
-    /**
-     * Get currently loaded AST
-     *
-     * @return Stmt[]|null
-     */
-    public function getAst()
-    {
-        return $this->ast;
     }
 }
