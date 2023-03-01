@@ -107,8 +107,8 @@ class EnvFile extends DataFile implements DataFileInterface
                 switch ($this->ast[$index + 1]['token']) {
                     case $this->lexer::T_VALUE:
                         if (
-                            str_contains($this->ast[$index + 1]['value'], '"')
-                            || str_contains($this->ast[$index + 1]['value'], '\'')
+                            strpos($this->ast[$index + 1]['value'], '"') !== false
+                            || strpos($this->ast[$index + 1]['value'], '\'') !== false
                         ) {
                             $this->ast[$index + 1]['token'] = $this->lexer::T_QUOTED_VALUE;
                         }
