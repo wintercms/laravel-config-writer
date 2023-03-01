@@ -98,7 +98,11 @@ class EnvFile extends DataFile implements DataFileInterface
                     !isset($this->ast[$index + 1])
                     || !in_array($this->ast[$index + 1]['token'], [$this->lexer::T_VALUE, $this->lexer::T_QUOTED_VALUE])
                 ) {
-                    throw new \Exception('jack go fix');
+                    // The next token was not a value, we need to create an empty value node to allow for value setting
+                    array_splice($this->ast, $index + 1, 0, [[
+                        'token' => $this->lexer::T_VALUE,
+                        'value' => ''
+                    ]]);
                 }
 
                 $this->ast[$index + 1]['value'] = $this->castValue($value);

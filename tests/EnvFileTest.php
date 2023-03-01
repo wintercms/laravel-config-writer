@@ -218,5 +218,9 @@ class EnvFileTest extends TestCase
         $env->set('APP_KEY', 'this is a test');
         $result = $env->render();
         $this->assertStringContainsString('APP_KEY="this is a test" # Change this', $result);
+
+        $env->set('VAR_NO_VALUE', 'this is a test');
+        $result = $env->render();
+        $this->assertStringContainsString('VAR_NO_VALUE=this is a test', $result);
     }
 }
