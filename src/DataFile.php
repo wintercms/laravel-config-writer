@@ -9,7 +9,7 @@ abstract class DataFile implements DataFileInterface
     /**
      * Abstract syntax tree
      *
-     * @var \PhpParser\Node\Stmt[]|array<int, array>
+     * @var mixed
      */
     protected $ast = [];
 

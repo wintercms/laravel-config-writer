@@ -1,7 +1,5 @@
 parameters:
+    reportUnmatchedIgnoredErrors: false
     level: 5
     paths:
         - src
-    ignoreErrors:
-        - message: '#Access to an undefined property.*?\$expr#'
-          path: src/ArrayFile.php

@@ -155,6 +155,7 @@ class ArrayFile extends DataFile implements DataFileInterface
             if ($target->value->name->parts[0] !== 'env' || !isset($target->value->args[0])) {
                 return $this;
             }
+            /* @phpstan-ignore-next-line */
             if (isset($target->value->args[0]) && !isset($target->value->args[1])) {
                 $target->value->args[1] = new Arg($this->makeAstNode($valueType, $value));
             }
