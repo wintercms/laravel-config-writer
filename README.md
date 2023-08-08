@@ -1,8 +1,8 @@
 # Laravel Config Writer
 
 [![Version](https://img.shields.io/github/v/release/wintercms/laravel-config-writer?sort=semver&style=flat-square)](https://github.com/wintercms/laravel-config-writer/releases)
-[![Tests](https://img.shields.io/github/workflow/status/wintercms/laravel-config-writer/Tests/develop?label=tests&style=flat-square)](https://github.com/wintercms/laravel-config-writer/actions)
-[![License](https://img.shields.io/github/license/winter/laravel-config-writer?label=open%20source&style=flat-square)](https://packagist.org/packages/winter/laravel-config-writer)
+[![Tests](https://img.shields.io/github/actions/workflow/status/wintercms/laravel-config-writer/tests.yaml?&label=tests&style=flat-square)](https://github.com/wintercms/laravel-config-writer/actions)
+[![License](https://img.shields.io/github/license/wintercms/laravel-config-writer?label=open%20source&style=flat-square)](https://packagist.org/packages/winter/laravel-config-writer)
 [![Discord](https://img.shields.io/discord/816852513684193281?label=discord&style=flat-square)](https://discord.gg/D5MFSPH6Ux)
 
 A utility to easily create and modify Laravel-style PHP configuration files and environment files whilst maintaining the formatting and comments contained within. This utility works by parsing the configuration files using the [PHP Parser library](https://github.com/nikic/php-parser) to convert the configuration into an abstract syntax tree, then carefully modifying the configuration values as required.
