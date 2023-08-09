@@ -20,15 +20,10 @@ use Winter\LaravelConfigWriter\Parser\PHPConstant;
 use Winter\LaravelConfigWriter\Parser\PHPFunction;
 use Winter\LaravelConfigWriter\Printer\ArrayPrinter;
 
-class ArrayFile implements DataFileInterface
+class ArrayFile extends DataFile implements DataFileInterface
 {
     const SORT_ASC = 'asc';
     const SORT_DESC = 'desc';
-
-    /**
-     * @var Stmt[]|null Abstract syntax tree produced by `PhpParser`
-     */
-    protected ?array $ast = null;
 
     /**
      * Lexer for use by `PhpParser`
@@ -160,6 +155,7 @@ class ArrayFile implements DataFileInterface
             if ($target->value->name->parts[0] !== 'env' || !isset($target->value->args[0])) {
                 return $this;
             }
+            /* @phpstan-ignore-next-line */
             if (isset($target->value->args[0]) && !isset($target->value->args[1])) {
                 $target->value->args[1] = new Arg($this->makeAstNode($valueType, $value));
             }
@@ -442,15 +438,5 @@ class ArrayFile implements DataFileInterface
     public function render(): string
     {
         return $this->printer->render($this->ast, $this->lexer) . "\n";
-    }
-
-    /**
-     * Get currently loaded AST
-     *
-     * @return Stmt[]|null
-     */
-    public function getAst()
-    {
-        return $this->ast;
     }
 }

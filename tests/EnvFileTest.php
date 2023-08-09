@@ -93,7 +93,7 @@ class EnvFileTest extends TestCase
         $this->assertStringContainsString('APP_KEY="winter"', $result);
         $this->assertStringContainsString('DB_USE_CONFIG_FOR_TESTING=false', $result);
         $this->assertStringContainsString('MAIL_HOST="smtp.mailgun.org"', $result);
-        $this->assertStringContainsString('ROUTES_CACHE="winter"', $result);
+        $this->assertStringContainsString('ROUTES_CACHE=winter', $result);
         $this->assertStringContainsString('ENABLE_CSRF=true', $result);
         $this->assertStringContainsString('# HELLO WORLD', $result);
         $this->assertStringContainsString('#ENV_TEST="wintercms"', $result);
@@ -158,7 +158,13 @@ class EnvFileTest extends TestCase
         $env->write($tmpFile);
 
         $result = file_get_contents($tmpFile);
-        $this->assertStringContainsString('APP_KEY=123', $result);
+        $this->assertStringContainsString('APP_KEY="123"', $result);
+
+        $env->set(['APP_KEY2' => '123']);
+        $env->write($tmpFile);
+
+        $result = file_get_contents($tmpFile);
+        $this->assertStringContainsString('APP_KEY2=123', $result);
 
         $env->set(['APP_KEY' => true]);
         $env->write($tmpFile);
@@ -188,5 +194,33 @@ class EnvFileTest extends TestCase
         $env = EnvFile::open($filePath);
 
         $this->assertEquals(file_get_contents($filePath), $env->render());
+    }
+
+    public function testHandleEdgeCases()
+    {
+        $filePath = __DIR__ . '/fixtures/env/edge-cases.env';
+
+        $env = EnvFile::open($filePath);
+
+        $this->assertEquals(file_get_contents($filePath), $env->render());
+    }
+
+    public function testUpdateEnvWithTrailingComment()
+    {
+        $filePath = __DIR__ . '/fixtures/env/edge-cases.env';
+
+        $env = EnvFile::open($filePath);
+
+        $env->set('APP_KEY', '123');
+        $result = $env->render();
+        $this->assertStringContainsString('APP_KEY="123" # Change this', $result);
+
+        $env->set('APP_KEY', 'this is a test');
+        $result = $env->render();
+        $this->assertStringContainsString('APP_KEY="this is a test" # Change this', $result);
+
+        $env->set('VAR_NO_VALUE', 'this is a test');
+        $result = $env->render();
+        $this->assertStringContainsString('VAR_NO_VALUE=this is a test', $result);
     }
 }
