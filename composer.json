@@ -1,5 +1,5 @@
 {
-    "name": "winter/laravel-config-writer",
+    "name": "raakkan/laravel-config-writer",
     "description": "Utility to create and update Laravel config and .env files",
     "type": "library",
     "license": "MIT",
