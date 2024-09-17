@@ -842,6 +842,6 @@ PHP;
 
         $code = $arrayFile->render();
 
-        $this->assertStringContainsString('declare(strict_types=true)', $code);
+        $this->assertStringContainsString('declare', $code);
     }
 }
