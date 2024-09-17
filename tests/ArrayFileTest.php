@@ -835,14 +835,13 @@ PHP;
         );
     }
 
-    public function testSingleLineCommentSubItem()
+    public function testStrictFileTypes()
     {
-        $file = __DIR__ . '/fixtures/array/single-line-comments-subitem.php';
+        $file = __DIR__ . '/fixtures/array/strict-file-types.php';
         $arrayFile = ArrayFile::open($file);
 
-        $this->assertEquals(
-            str_replace("\r", '', file_get_contents($file)),
-            str_replace("\r", '', $arrayFile->render())
-        );
+        $code = $arrayFile->render();
+
+        $this->assertStringContainsString('declare(strict_types=true)', $code);
     }
 }
