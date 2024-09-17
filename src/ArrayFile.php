@@ -305,6 +305,7 @@ class ArrayFile extends DataFile implements DataFileInterface
             switch (get_class($item)) {
                 case Stmt\Use_::class:
                 case Stmt\Expression::class:
+                case Stmt\Declare_::class:
                     break;
                 case Stmt\Return_::class:
                     return $index;
