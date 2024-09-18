@@ -845,4 +845,14 @@ PHP;
             str_replace("\r", '', $arrayFile->render())
         );
     }
+
+    public function testStrictFileTypes()
+    {
+        $file = __DIR__ . '/fixtures/array/strict-file-types.php';
+        $arrayFile = ArrayFile::open($file);
+
+        $code = $arrayFile->render();
+
+        $this->assertStringContainsString('declare', $code);
+    }
 }
