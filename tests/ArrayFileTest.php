@@ -835,6 +835,17 @@ PHP;
         );
     }
 
+    public function testSingleLineCommentSubItem()
+    {
+        $file = __DIR__ . '/fixtures/array/single-line-comments-subitem.php';
+        $arrayFile = ArrayFile::open($file);
+
+        $this->assertEquals(
+            str_replace("\r", '', file_get_contents($file)),
+            str_replace("\r", '', $arrayFile->render())
+        );
+    }
+
     public function testStrictFileTypes()
     {
         $file = __DIR__ . '/fixtures/array/strict-file-types.php';
