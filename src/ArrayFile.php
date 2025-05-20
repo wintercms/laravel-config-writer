@@ -79,15 +79,7 @@ class ArrayFile extends DataFile implements DataFileInterface
             throw new \InvalidArgumentException('file not found');
         }
 
-        $lexer = new Lexer\Emulative([
-            'usedAttributes' => [
-                'comments',
-                'startTokenPos',
-                'startLine',
-                'endTokenPos',
-                'endLine'
-            ]
-        ]);
+        $lexer = new Lexer\Emulative();
         $parser = (new ParserFactory)->create(ParserFactory::PREFER_PHP7, $lexer);
 
         try {
