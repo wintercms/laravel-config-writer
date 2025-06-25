@@ -6,14 +6,15 @@ use PhpParser\Lexer;
 use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Stmt;
+use PhpParser\ParserAbstract;
 use PhpParser\PrettyPrinter\Standard;
 
 class ArrayPrinter extends Standard
 {
     /**
-     * @var Lexer|null Lexer for use by `PhpParser`
+     * @var ParserAbstract|null Parser for use by `PhpParser`
      */
-    protected $lexer = null;
+    protected ?ParserAbstract $parser = null;
 
     /**
      * Creates a pretty printer instance using the given options.
@@ -41,13 +42,13 @@ class ArrayPrinter extends Standard
      *
      * @return string Pretty printed statements
      */
-    public function render(array $stmts, Lexer $lexer): string
+    public function render(array $stmts, ParserAbstract $parser): string
     {
         if (!$stmts) {
             return "<?php\n\n";
         }
 
-        $this->lexer = $lexer;
+        $this->parser = $parser;
 
         $p = "<?php\n\n" . $this->prettyPrint($stmts);
 
@@ -58,7 +59,7 @@ class ArrayPrinter extends Standard
             $p = preg_replace('/<\?php$/', '', rtrim($p));
         }
 
-        $this->lexer = null;
+        $this->parser = null;
 
         return $p;
     }
@@ -68,7 +69,7 @@ class ArrayPrinter extends Standard
      * @param bool $trailingComma
      * @return string
      */
-    protected function pMaybeMultiline(array $nodes, bool $trailingComma = false)
+    protected function pMaybeMultiline(array $nodes, bool $trailingComma = false): string
     {
         if ($this->hasNodeWithComments($nodes) || (isset($nodes[0]) && $nodes[0] instanceof Expr\ArrayItem)) {
             return $this->pCommaSeparatedMultiline($nodes, $trailingComma) . $this->nl;
@@ -123,11 +124,7 @@ class ArrayPrinter extends Standard
      */
     protected function pExpr_Array(Expr\Array_ $node): string
     {
-        $default = $this->options['shortArraySyntax']
-            ? Expr\Array_::KIND_SHORT
-            : Expr\Array_::KIND_LONG;
-
-        $ops = $node->getAttribute('kind', $default) === Expr\Array_::KIND_SHORT
+        $ops = $node->getAttribute('kind', Expr\Array_::KIND_SHORT) === Expr\Array_::KIND_SHORT
             ? ['[', ']']
             : ['array(', ')'];
 
@@ -138,11 +135,11 @@ class ArrayPrinter extends Standard
                 // opening control char
                 $ops[0],
                 // indent and add nl string
-                $this->indent(),
+                $this->nl,
                 // join all comments with nl string
                 implode($this->nl, $comments),
                 // outdent and add nl string
-                $this->outdent(),
+                $this->nl,
                 // closing control char
                 $ops[1]
             );
@@ -170,33 +167,6 @@ class ArrayPrinter extends Standard
 
         // default return
         return $ops[0] . $this->pMaybeMultiline($node->items, true) . $ops[1];
-    }
-
-    /**
-     * Increase indentation level.
-     * Proxied to allow for nl return
-     *
-     * @return string
-     */
-    protected function indent(): string
-    {
-        $this->indentLevel += 4;
-        $this->nl .= '    ';
-        return $this->nl;
-    }
-
-    /**
-     * Decrease indentation level.
-     * Proxied to allow for nl return
-     *
-     * @return string
-     */
-    protected function outdent(): string
-    {
-        assert($this->indentLevel >= 4);
-        $this->indentLevel -= 4;
-        $this->nl = "\n" . str_repeat(' ', $this->indentLevel);
-        return $this->nl;
     }
 
     /**
@@ -244,7 +214,7 @@ class ArrayPrinter extends Standard
     }
 
     /**
-     * Check the lexer tokens for comments within the node's start & end position
+     * Check the parser tokens for comments within the node's start & end position
      *
      * @param Node $node Node to check
      *
@@ -252,7 +222,7 @@ class ArrayPrinter extends Standard
      */
     protected function getNodeComments(Node $node): ?array
     {
-        $tokens = $this->lexer->getTokens();
+        $tokens = $this->parser->getTokens();
         $pos = $node->getAttribute('startTokenPos');
         $end = $node->getAttribute('endTokenPos');
         $endLine = $node->getAttribute('endLine');
@@ -307,7 +277,7 @@ class ArrayPrinter extends Standard
      * @param Expr\Include_ $node
      * @return string
      */
-    protected function pExpr_Include(Expr\Include_ $node)
+    protected function pExpr_Include(Expr\Include_ $node, int $precedence, int $lhsPrecedence): string
     {
         static $map = [
             Expr\Include_::TYPE_INCLUDE      => 'include',

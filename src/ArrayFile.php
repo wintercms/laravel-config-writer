@@ -13,7 +13,10 @@ use PhpParser\Node\Name;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Scalar\LNumber;
 use PhpParser\Node\Stmt;
-use PhpParser\ParserFactory;
+use PhpParser\Parser\Php7;
+use PhpParser\Parser\Php8;
+use PhpParser\ParserAbstract;
+use PhpParser\PhpVersion;
 use Winter\LaravelConfigWriter\Contracts\DataFileInterface;
 use Winter\LaravelConfigWriter\Exceptions\ConfigWriterException;
 use Winter\LaravelConfigWriter\Parser\PHPConstant;
@@ -28,7 +31,7 @@ class ArrayFile extends DataFile implements DataFileInterface
     /**
      * Lexer for use by `PhpParser`
      */
-    protected ?Lexer $lexer = null;
+    protected ?ParserAbstract $parser = null;
 
     /**
      * Path to the file
@@ -50,7 +53,7 @@ class ArrayFile extends DataFile implements DataFileInterface
      *
      * @param Stmt[] $ast
      */
-    final public function __construct(array $ast, Lexer $lexer, string $filePath = null, ArrayPrinter $printer = null)
+    final public function __construct(array $ast, ParserAbstract $parser, string $filePath = null, ArrayPrinter $printer = null)
     {
         $this->astReturnIndex = $this->getAstReturnIndex($ast);
 
@@ -59,7 +62,7 @@ class ArrayFile extends DataFile implements DataFileInterface
         }
 
         $this->ast = $ast;
-        $this->lexer = $lexer;
+        $this->parser = $parser;
         $this->filePath = $filePath;
         $this->printer = $printer ?? new ArrayPrinter();
     }
@@ -79,16 +82,12 @@ class ArrayFile extends DataFile implements DataFileInterface
             throw new \InvalidArgumentException('file not found');
         }
 
-        $lexer = new Lexer\Emulative([
-            'usedAttributes' => [
-                'comments',
-                'startTokenPos',
-                'startLine',
-                'endTokenPos',
-                'endLine'
-            ]
-        ]);
-        $parser = (new ParserFactory)->create(ParserFactory::PREFER_PHP7, $lexer);
+        $version = PhpVersion::getHostVersion();
+
+        $lexer = new Lexer\Emulative($version);
+        $parser = ($version->id >= 80000)
+            ? new Php8($lexer, $version)
+            : new Php7($lexer, $version);
 
         try {
             $ast = $parser->parse(
@@ -100,7 +99,7 @@ class ArrayFile extends DataFile implements DataFileInterface
             throw new ConfigWriterException($e);
         }
 
-        return new static($ast, $lexer, $filePath);
+        return new static($ast, $parser, $filePath);
     }
 
     /**
@@ -152,7 +151,7 @@ class ArrayFile extends DataFile implements DataFileInterface
 
         // special handling of function objects
         if (get_class($target->value) === FuncCall::class && $valueType !== 'function') {
-            if ($target->value->name->parts[0] !== 'env' || !isset($target->value->args[0])) {
+            if ($target->value->name->name !== 'env' || !isset($target->value->args[0])) {
                 return $this;
             }
             /* @phpstan-ignore-next-line */
@@ -438,6 +437,6 @@ class ArrayFile extends DataFile implements DataFileInterface
      */
     public function render(): string
     {
-        return $this->printer->render($this->ast, $this->lexer) . "\n";
+        return $this->printer->render($this->ast, $this->parser) . "\n";
     }
 }
