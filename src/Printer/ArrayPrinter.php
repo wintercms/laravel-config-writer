@@ -2,12 +2,12 @@
 
 namespace Winter\LaravelConfigWriter\Printer;
 
-use PhpParser\Lexer;
 use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Stmt;
 use PhpParser\ParserAbstract;
 use PhpParser\PrettyPrinter\Standard;
+use PhpParser\Token;
 
 class ArrayPrinter extends Standard
 {
@@ -129,15 +129,20 @@ class ArrayPrinter extends Standard
             : ['array(', ')'];
 
         if (!count($node->items) && $comments = $this->getNodeComments($node)) {
+            // We could previously return the indent string while modifying the indent level, however
+            // Now the method is typehinted we cannot, so a little bodge...
+            $this->indent();
+            $nl = $this->nl;
+            $this->outdent();
             // the array has no items, we can inject whatever we want
             return sprintf(
                 '%s%s%s%s%s',
                 // opening control char
                 $ops[0],
                 // indent and add nl string
-                $this->nl,
+                $nl,
                 // join all comments with nl string
-                implode($this->nl, $comments),
+                implode($nl, $comments),
                 // outdent and add nl string
                 $this->nl,
                 // closing control char
@@ -226,31 +231,29 @@ class ArrayPrinter extends Standard
         $pos = $node->getAttribute('startTokenPos');
         $end = $node->getAttribute('endTokenPos');
         $endLine = $node->getAttribute('endLine');
-        $content = [];
+        $comments = [];
 
         while (++$pos < $end) {
-            if (!isset($tokens[$pos]) || (!is_array($tokens[$pos]) && $tokens[$pos] !== ',')) {
+            if (!isset($tokens[$pos]) || (!$tokens[$pos] instanceof Token)) {
                 break;
             }
 
-            if ($tokens[$pos][0] === T_WHITESPACE || $tokens[$pos] === ',') {
+            if ($tokens[$pos]->id === T_WHITESPACE) {
                 continue;
             }
 
-            list($type, $string, $line) = $tokens[$pos];
-
-            if ($line > $endLine) {
+            if ($tokens[$pos]->line > $endLine) {
                 break;
             }
 
-            if ($type === T_COMMENT || $type === T_DOC_COMMENT) {
-                $content[] = $string;
-            } elseif ($content) {
+            if ($tokens[$pos]->id === T_COMMENT || $tokens[$pos]->id === T_DOC_COMMENT) {
+                $comments[] = $tokens[$pos]->text;
+            } elseif ($comments) {
                 break;
             }
         }
 
-        return empty($content) ? null : $content;
+        return empty($comments) ? null : $comments;
     }
 
     /**
