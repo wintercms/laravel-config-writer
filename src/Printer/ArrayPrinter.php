@@ -246,6 +246,12 @@ class ArrayPrinter extends Standard
                 break;
             }
 
+            // 91 represents the token id for a new array starting, at which point we no longer want to collect
+            // the comments from inside, as they do not belong to the node we're looking at
+            if ($tokens[$pos]->id === 91) {
+                break;
+            }
+
             if ($tokens[$pos]->id === T_COMMENT || $tokens[$pos]->id === T_DOC_COMMENT) {
                 $comments[] = $tokens[$pos]->text;
             } elseif ($comments) {
@@ -273,7 +279,17 @@ class ArrayPrinter extends Standard
 
         $padding = $comments[0]->getStartLine() !== $comments[count($comments) - 1]->getEndLine() ? $this->nl : '';
 
-        return "\n" . $this->nl . trim($padding . implode($this->nl, $formattedComments)) . "\n";
+        // Get the parsed tokens
+        $tokens = $this->parser->getTokens();
+
+        // Get the previous and next tokens either side of the comment block
+        $previous = $tokens[$comments[array_key_first($comments)]->getStartTokenPos() - 1] ?? null;
+        $next = $tokens[$comments[array_key_last($comments)]->getStartTokenPos() + 1] ?? null;
+
+        // If the previous or next node contains duplicate \n then add one additional to the $this->nl, else just nl
+        return (($previous->text ?? false) && substr_count($previous->text, PHP_EOL) > 1 ? "\n" : '')
+            . $this->nl . trim($padding . implode($this->nl, $formattedComments))
+            . (($next->text ?? false) && substr_count($next->text, PHP_EOL) > 1 ? "\n" : '');
     }
 
     /**
