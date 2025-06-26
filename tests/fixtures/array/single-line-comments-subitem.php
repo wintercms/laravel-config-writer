@@ -30,17 +30,17 @@ return [
 
     'connections' => [
         'pusher' => [
-            'app_id' => env('PUSHER_APP_ID'),
+            'app_id' => env('PUSHER_APP_ID', false),
             'client_options' => [
                 // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
             ],
             'driver' => 'pusher',
-            'key' => env('PUSHER_APP_KEY'),
+            'key' => env('PUSHER_APP_KEY', true),
             'options' => [
-                'cluster' => env('PUSHER_APP_CLUSTER'),
+                'cluster' => env('PUSHER_APP_CLUSTER', null),
                 'useTLS' => true,
             ],
-            'secret' => env('PUSHER_APP_SECRET'),
+            'secret' => env('PUSHER_APP_SECRET', T_BOOL_CAST),
         ],
         'ably' => [
             'driver' => 'ably',
