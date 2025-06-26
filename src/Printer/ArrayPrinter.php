@@ -17,24 +17,6 @@ class ArrayPrinter extends Standard
     protected ?ParserAbstract $parser = null;
 
     /**
-     * Creates a pretty printer instance using the given options.
-     *
-     * Supported options:
-     *  * bool $shortArraySyntax = false: Whether to use [] instead of array() as the default array
-     *                                    syntax, if the node does not specify a format.
-     *
-     * @param array<string, bool> $options Dictionary of formatting options
-     */
-    public function __construct(array $options = [])
-    {
-        if (!isset($options['shortArraySyntax'])) {
-            $options['shortArraySyntax'] = true;
-        }
-
-        parent::__construct($options);
-    }
-
-    /**
      * Proxy of `prettyPrintFile` to allow for adding lexer token checking support during render.
      * Pretty prints a file of statements (includes the opening <?php tag if it is required).
      *
