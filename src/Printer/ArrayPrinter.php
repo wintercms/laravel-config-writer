@@ -229,8 +229,9 @@ class ArrayPrinter extends Standard
             }
 
             // 91 represents the token id for a new array starting, at which point we no longer want to collect
-            // the comments from inside, as they do not belong to the node we're looking at
-            if ($tokens[$pos]->id === 91) {
+            // the comments from inside, as they do not belong to the node we're looking at, 40 is open paren for old
+            // syntax arrays
+            if ($tokens[$pos]->id === 91 || $tokens[$pos]->id === T_ARRAY && $tokens[$pos + 1]->id === 40) {
                 break;
             }
 
