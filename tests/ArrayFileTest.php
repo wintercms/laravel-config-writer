@@ -824,6 +824,28 @@ PHP;
         $this->assertStringNotContainsString(str_repeat(' ', 12) . '|', $code);
     }
 
+    public function testMultiLineNestedCommentsSimple()
+    {
+        $file = __DIR__ . '/fixtures/array/multi-line-nested-comments-simple.php';
+        $arrayFile = ArrayFile::open($file);
+
+        $this->assertEquals(
+            str_replace("\r", '', file_get_contents($file)),
+            str_replace("\r", '', $arrayFile->render())
+        );
+    }
+
+    public function testMultiLineNestedCommentsComplex()
+    {
+        $file = __DIR__ . '/fixtures/array/multi-line-nested-comments-complex.php';
+        $arrayFile = ArrayFile::open($file);
+
+        $this->assertEquals(
+            str_replace("\r", '', file_get_contents($file)),
+            str_replace("\r", '', $arrayFile->render())
+        );
+    }
+
     public function testSingleLineComment()
     {
         $file = __DIR__ . '/fixtures/array/single-line-comments.php';

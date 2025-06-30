@@ -12,6 +12,42 @@ use PhpParser\Token;
 class ArrayPrinter extends Standard
 {
     /**
+     * @var int T_ARRAY_OPEN represents the token id for `[`
+     */
+    public const T_ARRAY_OPEN = 91;
+
+    /**
+     * @var int T_ARRAY_CLOSE represents the token id for `]`
+     */
+    public const T_ARRAY_CLOSE = 93;
+
+    /**
+     * @var int T_PAREN_OPEN represents the token id for `(`
+     */
+
+    public const T_PAREN_OPEN = 40;
+    /**
+     * @var int T_PAREN_CLOSE represents the token id for `)`
+     */
+    public const T_PAREN_CLOSE = 41;
+
+    /**
+     * @var array LIST_T_OPENS lists all open tokens, used instead of creating a new array within comment detection
+     */
+    public const LIST_T_OPENS = [
+        self::T_ARRAY_OPEN,
+        self::T_PAREN_OPEN,
+    ];
+
+    /**
+     * @const array LIST_T_CLOSES lists all close tokens, used instead of creating a new array within comment detection
+     */
+    public const LIST_T_CLOSES = [
+        self::T_ARRAY_CLOSE,
+        self::T_PAREN_CLOSE,
+    ];
+
+    /**
      * @var ParserAbstract|null Parser for use by `PhpParser`
      */
     protected ?ParserAbstract $parser = null;
@@ -133,7 +169,7 @@ class ArrayPrinter extends Standard
         }
 
         if ($comments = $this->getCommentsNotInArray($node)) {
-            // array has items, we have detected comments not included within the array, therefore we have found
+            // array has items, we have detected comments not included within the array, therefore, we have found
             // trailing comments and must append them to the end of the array
             return sprintf(
                 '%s%s%s%s%s%s',
@@ -201,7 +237,7 @@ class ArrayPrinter extends Standard
     }
 
     /**
-     * Check the parser tokens for comments within the node's start & end position
+     * Check the parser tokens for comments within the node's start & end position, at root scope level
      *
      * @param Node $node Node to check
      *
@@ -214,31 +250,38 @@ class ArrayPrinter extends Standard
         $end = $node->getAttribute('endTokenPos');
         $endLine = $node->getAttribute('endLine');
         $comments = [];
+        $level = 0;
 
-        while (++$pos < $end) {
-            if (!isset($tokens[$pos]) || (!$tokens[$pos] instanceof Token)) {
+        // We start at the starting position of the node which should be `[`, meaning that our root scope level
+        // should always be 1, if it is less then we have exited the node, and bad things will happen
+        for (;$pos <= $end; $pos++) {
+            if (!isset($tokens[$pos]) || (!$tokens[$pos] instanceof Token) || $tokens[$pos]->line > $endLine) {
                 break;
             }
 
-            if ($tokens[$pos]->id === T_WHITESPACE) {
+            // When we encounter a token of either [ or ( we increase the scope level, this allows us to keep a track
+            // of where we are in the ast, otherwise we will put comments in the wrong place as we will find comments
+            // nested in deeper nodes, that we will pick up later anyway
+            if (in_array($tokens[$pos]->id, static::LIST_T_OPENS)) {
+                $level++;
                 continue;
             }
 
-            if ($tokens[$pos]->line > $endLine) {
-                break;
+            // When encountering a closing type, we reduce the scope level, allowing us to start looking for comments
+            // again if we're only at scope level 1
+            if (in_array($tokens[$pos]->id, static::LIST_T_CLOSES) && $level) {
+                $level--;
             }
 
-            // 91 represents the token id for a new array starting, at which point we no longer want to collect
-            // the comments from inside, as they do not belong to the node we're looking at, 40 is open paren for old
-            // syntax arrays
-            if ($tokens[$pos]->id === 91 || $tokens[$pos]->id === T_ARRAY && $tokens[$pos + 1]->id === 40) {
-                break;
+            // If either we encounter whitespace (we do not preserve whitespace) or our scope level is higher than our
+            // root level, then we continue
+            if ($tokens[$pos]->id === T_WHITESPACE || $level > 1) {
+                continue;
             }
 
+            // We found a comment in the scope of the node passed, add it to the array for returning
             if ($tokens[$pos]->id === T_COMMENT || $tokens[$pos]->id === T_DOC_COMMENT) {
                 $comments[] = $tokens[$pos]->text;
-            } elseif ($comments) {
-                break;
             }
         }
 
