@@ -2,36 +2,55 @@
 
 namespace Winter\LaravelConfigWriter\Printer;
 
-use PhpParser\Lexer;
 use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Stmt;
+use PhpParser\ParserAbstract;
 use PhpParser\PrettyPrinter\Standard;
+use PhpParser\Token;
 
 class ArrayPrinter extends Standard
 {
     /**
-     * @var Lexer|null Lexer for use by `PhpParser`
+     * @var int T_ARRAY_OPEN represents the token id for `[`
      */
-    protected $lexer = null;
+    public const T_ARRAY_OPEN = 91;
 
     /**
-     * Creates a pretty printer instance using the given options.
-     *
-     * Supported options:
-     *  * bool $shortArraySyntax = false: Whether to use [] instead of array() as the default array
-     *                                    syntax, if the node does not specify a format.
-     *
-     * @param array<string, bool> $options Dictionary of formatting options
+     * @var int T_ARRAY_CLOSE represents the token id for `]`
      */
-    public function __construct(array $options = [])
-    {
-        if (!isset($options['shortArraySyntax'])) {
-            $options['shortArraySyntax'] = true;
-        }
+    public const T_ARRAY_CLOSE = 93;
 
-        parent::__construct($options);
-    }
+    /**
+     * @var int T_PAREN_OPEN represents the token id for `(`
+     */
+
+    public const T_PAREN_OPEN = 40;
+    /**
+     * @var int T_PAREN_CLOSE represents the token id for `)`
+     */
+    public const T_PAREN_CLOSE = 41;
+
+    /**
+     * @var array LIST_T_OPENS lists all open tokens, used instead of creating a new array within comment detection
+     */
+    public const LIST_T_OPENS = [
+        self::T_ARRAY_OPEN,
+        self::T_PAREN_OPEN,
+    ];
+
+    /**
+     * @const array LIST_T_CLOSES lists all close tokens, used instead of creating a new array within comment detection
+     */
+    public const LIST_T_CLOSES = [
+        self::T_ARRAY_CLOSE,
+        self::T_PAREN_CLOSE,
+    ];
+
+    /**
+     * @var ParserAbstract|null Parser for use by `PhpParser`
+     */
+    protected ?ParserAbstract $parser = null;
 
     /**
      * Proxy of `prettyPrintFile` to allow for adding lexer token checking support during render.
@@ -41,13 +60,13 @@ class ArrayPrinter extends Standard
      *
      * @return string Pretty printed statements
      */
-    public function render(array $stmts, Lexer $lexer): string
+    public function render(array $stmts, ParserAbstract $parser): string
     {
         if (!$stmts) {
             return "<?php\n\n";
         }
 
-        $this->lexer = $lexer;
+        $this->parser = $parser;
 
         $p = "<?php\n\n" . $this->prettyPrint($stmts);
 
@@ -58,7 +77,7 @@ class ArrayPrinter extends Standard
             $p = preg_replace('/<\?php$/', '', rtrim($p));
         }
 
-        $this->lexer = null;
+        $this->parser = null;
 
         return $p;
     }
@@ -68,7 +87,7 @@ class ArrayPrinter extends Standard
      * @param bool $trailingComma
      * @return string
      */
-    protected function pMaybeMultiline(array $nodes, bool $trailingComma = false)
+    protected function pMaybeMultiline(array $nodes, bool $trailingComma = false): string
     {
         if ($this->hasNodeWithComments($nodes) || (isset($nodes[0]) && $nodes[0] instanceof Expr\ArrayItem)) {
             return $this->pCommaSeparatedMultiline($nodes, $trailingComma) . $this->nl;
@@ -123,33 +142,34 @@ class ArrayPrinter extends Standard
      */
     protected function pExpr_Array(Expr\Array_ $node): string
     {
-        $default = $this->options['shortArraySyntax']
-            ? Expr\Array_::KIND_SHORT
-            : Expr\Array_::KIND_LONG;
-
-        $ops = $node->getAttribute('kind', $default) === Expr\Array_::KIND_SHORT
+        $ops = $node->getAttribute('kind', Expr\Array_::KIND_SHORT) === Expr\Array_::KIND_SHORT
             ? ['[', ']']
             : ['array(', ')'];
 
         if (!count($node->items) && $comments = $this->getNodeComments($node)) {
+            // We could previously return the indent string while modifying the indent level, however
+            // Now the method is typehinted we cannot, so a little bodge...
+            $this->indent();
+            $nl = $this->nl;
+            $this->outdent();
             // the array has no items, we can inject whatever we want
             return sprintf(
                 '%s%s%s%s%s',
                 // opening control char
                 $ops[0],
                 // indent and add nl string
-                $this->indent(),
+                $nl,
                 // join all comments with nl string
-                implode($this->nl, $comments),
+                implode($nl, $comments),
                 // outdent and add nl string
-                $this->outdent(),
+                $this->nl,
                 // closing control char
                 $ops[1]
             );
         }
 
         if ($comments = $this->getCommentsNotInArray($node)) {
-            // array has items, we have detected comments not included within the array, therefore we have found
+            // array has items, we have detected comments not included within the array, therefore, we have found
             // trailing comments and must append them to the end of the array
             return sprintf(
                 '%s%s%s%s%s%s',
@@ -170,33 +190,6 @@ class ArrayPrinter extends Standard
 
         // default return
         return $ops[0] . $this->pMaybeMultiline($node->items, true) . $ops[1];
-    }
-
-    /**
-     * Increase indentation level.
-     * Proxied to allow for nl return
-     *
-     * @return string
-     */
-    protected function indent(): string
-    {
-        $this->indentLevel += 4;
-        $this->nl .= '    ';
-        return $this->nl;
-    }
-
-    /**
-     * Decrease indentation level.
-     * Proxied to allow for nl return
-     *
-     * @return string
-     */
-    protected function outdent(): string
-    {
-        assert($this->indentLevel >= 4);
-        $this->indentLevel -= 4;
-        $this->nl = "\n" . str_repeat(' ', $this->indentLevel);
-        return $this->nl;
     }
 
     /**
@@ -244,7 +237,7 @@ class ArrayPrinter extends Standard
     }
 
     /**
-     * Check the lexer tokens for comments within the node's start & end position
+     * Check the parser tokens for comments within the node's start & end position, at root scope level
      *
      * @param Node $node Node to check
      *
@@ -252,35 +245,47 @@ class ArrayPrinter extends Standard
      */
     protected function getNodeComments(Node $node): ?array
     {
-        $tokens = $this->lexer->getTokens();
+        $tokens = $this->parser->getTokens();
         $pos = $node->getAttribute('startTokenPos');
         $end = $node->getAttribute('endTokenPos');
         $endLine = $node->getAttribute('endLine');
-        $content = [];
+        $comments = [];
+        $level = 0;
 
-        while (++$pos < $end) {
-            if (!isset($tokens[$pos]) || (!is_array($tokens[$pos]) && $tokens[$pos] !== ',')) {
+        // We start at the starting position of the node which should be `[`, meaning that our root scope level
+        // should always be 1, if it is less then we have exited the node, and bad things will happen
+        for (;$pos <= $end; $pos++) {
+            if (!isset($tokens[$pos]) || (!$tokens[$pos] instanceof Token) || $tokens[$pos]->line > $endLine) {
                 break;
             }
 
-            if ($tokens[$pos][0] === T_WHITESPACE || $tokens[$pos] === ',') {
+            // When we encounter a token of either [ or ( we increase the scope level, this allows us to keep a track
+            // of where we are in the ast, otherwise we will put comments in the wrong place as we will find comments
+            // nested in deeper nodes, that we will pick up later anyway
+            if (in_array($tokens[$pos]->id, static::LIST_T_OPENS)) {
+                $level++;
                 continue;
             }
 
-            list($type, $string, $line) = $tokens[$pos];
-
-            if ($line > $endLine) {
-                break;
+            // When encountering a closing type, we reduce the scope level, allowing us to start looking for comments
+            // again if we're only at scope level 1
+            if (in_array($tokens[$pos]->id, static::LIST_T_CLOSES) && $level) {
+                $level--;
             }
 
-            if ($type === T_COMMENT || $type === T_DOC_COMMENT) {
-                $content[] = $string;
-            } elseif ($content) {
-                break;
+            // If either we encounter whitespace (we do not preserve whitespace) or our scope level is higher than our
+            // root level, then we continue
+            if ($tokens[$pos]->id === T_WHITESPACE || $level > 1) {
+                continue;
+            }
+
+            // We found a comment in the scope of the node passed, add it to the array for returning
+            if ($tokens[$pos]->id === T_COMMENT || $tokens[$pos]->id === T_DOC_COMMENT) {
+                $comments[] = $tokens[$pos]->text;
             }
         }
 
-        return empty($content) ? null : $content;
+        return empty($comments) ? null : $comments;
     }
 
     /**
@@ -300,14 +305,24 @@ class ArrayPrinter extends Standard
 
         $padding = $comments[0]->getStartLine() !== $comments[count($comments) - 1]->getEndLine() ? $this->nl : '';
 
-        return "\n" . $this->nl . trim($padding . implode($this->nl, $formattedComments)) . "\n";
+        // Get the parsed tokens
+        $tokens = $this->parser->getTokens();
+
+        // Get the previous and next tokens either side of the comment block
+        $previous = $tokens[$comments[array_key_first($comments)]->getStartTokenPos() - 1] ?? null;
+        $next = $tokens[$comments[array_key_last($comments)]->getStartTokenPos() + 1] ?? null;
+
+        // If the previous or next node contains duplicate \n then add one additional to the $this->nl, else just nl
+        return (($previous->text ?? false) && substr_count($previous->text, PHP_EOL) > 1 ? "\n" : '')
+            . $this->nl . trim($padding . implode($this->nl, $formattedComments))
+            . (($next->text ?? false) && substr_count($next->text, PHP_EOL) > 1 ? "\n" : '');
     }
 
     /**
      * @param Expr\Include_ $node
      * @return string
      */
-    protected function pExpr_Include(Expr\Include_ $node)
+    protected function pExpr_Include(Expr\Include_ $node, int $precedence, int $lhsPrecedence): string
     {
         static $map = [
             Expr\Include_::TYPE_INCLUDE      => 'include',
