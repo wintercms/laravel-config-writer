@@ -29,6 +29,6 @@ class EnvPrinter implements DataFilePrinterInterface
             }
         }
 
-        return $output;
+        return rtrim($output) . "\n";
     }
 }

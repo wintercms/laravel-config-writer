@@ -223,4 +223,25 @@ class EnvFileTest extends TestCase
         $result = $env->render();
         $this->assertStringContainsString('VAR_NO_VALUE=this is a test', $result);
     }
+
+    public function testUpdateEnvWithEmptyLine()
+    {
+        $filePath = __DIR__ . '/fixtures/env/test.env';
+        $tmpFile = __DIR__ . '/fixtures/env/temp-test.env';
+
+        $env = EnvFile::open($filePath);
+
+        $env->set('APP_DEBUG', 'true');
+        $env->addEmptyLine();
+
+        $env->set('APP_URL', 'http://localhost');
+        $env->addEmptyLine();
+
+        $env->write($tmpFile);
+
+        $result = file_get_contents($tmpFile);
+        $expected = file_get_contents($filePath);
+
+        $this->assertEquals($expected, $result);
+    }
 }
