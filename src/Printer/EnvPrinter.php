@@ -29,6 +29,6 @@ class EnvPrinter implements DataFilePrinterInterface
             }
         }
 
-        return rtrim($output) . "\n";
+        return rtrim($output) . PHP_EOL;
     }
 }

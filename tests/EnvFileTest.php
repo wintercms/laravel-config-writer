@@ -226,8 +226,7 @@ class EnvFileTest extends TestCase
 
     public function testUpdateEnvWithEmptyLine()
     {
-        $filePath = __DIR__ . '/fixtures/env/test.env';
-        $tmpFile = __DIR__ . '/fixtures/env/temp-test.env';
+        $filePath = __DIR__ . '/fixtures/env/case_with_empty_lines.env';
 
         $env = EnvFile::open($filePath);
 
@@ -237,10 +236,9 @@ class EnvFileTest extends TestCase
         $env->set('APP_URL', 'http://localhost');
         $env->addEmptyLine();
 
-        $env->write($tmpFile);
+        $result = $env->render();
 
-        $result = file_get_contents($tmpFile);
-        $expected = file_get_contents($filePath);
+        $expected = file_get_contents(__DIR__ . '/fixtures/env/test.env');
 
         $this->assertEquals($expected, $result);
     }
