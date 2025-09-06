@@ -230,7 +230,6 @@ class EnvFileTest extends TestCase
 
         $env = EnvFile::open($filePath);
 
-        $env->set('APP_DEBUG', 'true');
         $env->addEmptyLine();
         $env->addEmptyLine();
         $env->addEmptyLine();
