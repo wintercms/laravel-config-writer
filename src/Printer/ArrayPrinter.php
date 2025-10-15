@@ -33,11 +33,6 @@ class ArrayPrinter extends Standard
     public const T_PAREN_CLOSE = 41;
 
     /**
-     * @var int T_APPARENT_WHITESPACE represents the token id for whitespace
-     */
-    public const T_APPARENT_WHITESPACE = 396;
-
-    /**
      * @var array LIST_T_OPENS lists all open tokens, used instead of creating a new array within comment detection
      */
     public const LIST_T_OPENS = [
@@ -158,8 +153,8 @@ class ArrayPrinter extends Standard
         // whitespace token was a double return, then prefix a \n
         $prefix = (
             count($previousTokens) > 1
-            && $previousTokens[1]->id === static::T_APPARENT_WHITESPACE
-            && $previousTokens[0]->id !== static::T_APPARENT_WHITESPACE
+            && $previousTokens[1]->id === T_WHITESPACE
+            && $previousTokens[0]->id !== T_WHITESPACE
             && $previousTokens[1]->text === "\n\n"
         ) ? "\n" : '';
 
