@@ -26,6 +26,7 @@ class ArrayPrinter extends Standard
      */
 
     public const T_PAREN_OPEN = 40;
+
     /**
      * @var int T_PAREN_CLOSE represents the token id for `)`
      */
@@ -131,6 +132,33 @@ class ArrayPrinter extends Standard
 
         $this->outdent();
         return $result;
+    }
+
+    /**
+     * Render a return statement
+     *
+     * @param Stmt\Return_ $node Return statement node
+     *
+     * @return string Return followed by the return value
+     */
+    protected function pStmt_Return(Stmt\Return_ $node): string
+    {
+        // Get tokens from parser
+        $tokens = $this->parser->getTokens();
+
+        // Get the previous 2 tokens before the current node
+        $previousTokens = array_splice($tokens, $node->getAttribute('startTokenPos') - 2, 2);
+
+        // If the last token was whitespace and the token before that was not whitespace and the
+        // whitespace token was a double return, then prefix a \n
+        $prefix = (
+            count($previousTokens) > 1
+            && $previousTokens[1]->id === T_WHITESPACE
+            && $previousTokens[0]->id !== T_WHITESPACE
+            && $previousTokens[1]->text === PHP_EOL . PHP_EOL
+        ) ? "\n" : '';
+
+        return $prefix . 'return' . (null !== $node->expr ? ' ' . $this->p($node->expr) : '') . ';';
     }
 
     /**
