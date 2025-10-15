@@ -155,8 +155,8 @@ class ArrayPrinter extends Standard
             count($previousTokens) > 1
             && $previousTokens[1]->id === T_WHITESPACE
             && $previousTokens[0]->id !== T_WHITESPACE
-            && $previousTokens[1]->text === "\n\n"
-        ) ? "\n" : '';
+            && $previousTokens[1]->text === PHP_EOL . PHP_EOL
+        ) ? PHP_EOL : '';
 
         return $prefix . 'return' . (null !== $node->expr ? ' ' . $this->p($node->expr) : '') . ';';
     }
