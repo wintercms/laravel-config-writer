@@ -223,4 +223,38 @@ class EnvFileTest extends TestCase
         $result = $env->render();
         $this->assertStringContainsString('VAR_NO_VALUE=this is a test', $result);
     }
+
+    public function testUpdateEnvWithEmptyLine()
+    {
+        $filePath = __DIR__ . '/fixtures/env/test.env';
+
+        $env = EnvFile::open($filePath);
+
+        $env->addEmptyLine();
+        $env->addEmptyLine();
+        $env->addEmptyLine();
+        $env->addEmptyLine();
+
+        $this->assertEquals(file_get_contents($filePath), $env->render());
+    }
+
+    public function testEnvComplexWithEmptyLine()
+    {
+        $env = new EnvFile('');
+
+        $env->addEmptyLine();
+        $env->addEmptyLine();
+
+        $env->set('VAR_ONE', '1');
+
+        $env->addEmptyLine();
+        $env->addEmptyLine();
+
+        $env->set('VAR_TWO', '2');
+
+        $env->addEmptyLine();
+        $env->addEmptyLine();
+
+        $this->assertEquals(sprintf('%1$s%1$sVAR_ONE=1%1$s%1$s%1$sVAR_TWO=2%1$s', PHP_EOL), $env->render());
+    }
 }
