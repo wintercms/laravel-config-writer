@@ -237,4 +237,24 @@ class EnvFileTest extends TestCase
 
         $this->assertEquals(file_get_contents($filePath), $env->render());
     }
+
+    public function testEnvComplexWithEmptyLine()
+    {
+        $env = new EnvFile('');
+
+        $env->addEmptyLine();
+        $env->addEmptyLine();
+
+        $env->set('VAR_ONE', '1');
+
+        $env->addEmptyLine();
+        $env->addEmptyLine();
+
+        $env->set('VAR_TWO', '2');
+
+        $env->addEmptyLine();
+        $env->addEmptyLine();
+
+        $this->assertEquals("\n\nVAR_ONE=1\n\n\nVAR_TWO=2\n", $env->render());
+    }
 }
