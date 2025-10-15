@@ -26,10 +26,16 @@ class ArrayPrinter extends Standard
      */
 
     public const T_PAREN_OPEN = 40;
+
     /**
      * @var int T_PAREN_CLOSE represents the token id for `)`
      */
     public const T_PAREN_CLOSE = 41;
+
+    /**
+     * @var int T_APPARENT_WHITESPACE represents the token id for whitespace
+     */
+    public const T_APPARENT_WHITESPACE = 396;
 
     /**
      * @var array LIST_T_OPENS lists all open tokens, used instead of creating a new array within comment detection
@@ -131,6 +137,33 @@ class ArrayPrinter extends Standard
 
         $this->outdent();
         return $result;
+    }
+
+    /**
+     * Render a return statement
+     *
+     * @param Stmt\Return_ $node Return statement node
+     *
+     * @return string Return followed by the return value
+     */
+    protected function pStmt_Return(Stmt\Return_ $node): string
+    {
+        // Get tokens from parser
+        $tokens = $this->parser->getTokens();
+
+        // Get the previous 2 tokens before the current node
+        $previousTokens = array_splice($tokens, $node->getAttribute('startTokenPos') - 2, 2);
+
+        // If the last token was whitespace and the token before that was not whitespace and the
+        // whitespace token was a double return, then prefix a \n
+        $prefix = (
+            count($previousTokens) > 1
+            && $previousTokens[1]->id === static::T_APPARENT_WHITESPACE
+            && $previousTokens[0]->id !== static::T_APPARENT_WHITESPACE
+            && $previousTokens[1]->text === "\n\n"
+        ) ? "\n" : '';
+
+        return $prefix . 'return' . (null !== $node->expr ? ' ' . $this->p($node->expr) : '') . ';';
     }
 
     /**
