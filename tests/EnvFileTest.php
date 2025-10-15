@@ -255,6 +255,6 @@ class EnvFileTest extends TestCase
         $env->addEmptyLine();
         $env->addEmptyLine();
 
-        $this->assertEquals("\n\nVAR_ONE=1\n\n\nVAR_TWO=2\n", $env->render());
+        $this->assertEquals(sprintf('%1$s%1$sVAR_ONE=1%1$s%1$s%1$sVAR_TWO=2%1$s', PHP_EOL), $env->render());
     }
 }
