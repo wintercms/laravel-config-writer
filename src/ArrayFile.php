@@ -188,8 +188,8 @@ class ArrayFile extends DataFile implements DataFileInterface
      * Generate an AST node, using `PhpParser` classes, for a value
      *
      * @param mixed $value
-     * @throws \RuntimeException If $type is not one of 'string', 'boolean', 'integer', 'function', 'const', 'null', or 'array'
-     * @return ConstFetch|LNumber|String_|Array_|FuncCall
+     * @throws \RuntimeException If $type is not one of 'string', 'boolean', 'integer', 'double', 'function', 'const', 'null', or 'array'
+     * @return ConstFetch|LNumber|DNumber|String_|Array_|FuncCall
      */
     protected function makeAstNode(string $type, $value)
     {

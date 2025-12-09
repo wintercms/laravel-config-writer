@@ -135,6 +135,15 @@ class ArrayFileTest extends TestCase
         $this->assertTrue(is_array($result));
         $this->assertArrayHasKey('url', $result);
         $this->assertIsInt($result['url']);
+
+        $arrayFile = ArrayFile::open(__DIR__ . '/fixtures/array/sample-array-file.php');
+        $arrayFile->set('url', 12.34);
+        $result = eval('?>' . $arrayFile->render());
+
+        $this->assertTrue(is_array($result));
+        $this->assertArrayHasKey('url', $result);
+        $this->assertIsFloat($result['url']);
+        $this->assertEquals(12.34, $result['url']);
     }
 
     public function testRender()
@@ -227,6 +236,17 @@ class ArrayFileTest extends TestCase
 
         $this->assertArrayHasKey('aNumber', $result);
         $this->assertEquals(69, $result['aNumber']);
+
+        /*
+         * Rewrite a double/float
+         */
+        $arrayFile = ArrayFile::open(__DIR__ . '/fixtures/array/sample-array-file.php');
+        $arrayFile->set('aNumber', 3.14159);
+        $result = eval('?>' . $arrayFile->render());
+
+        $this->assertArrayHasKey('aNumber', $result);
+        $this->assertIsFloat($result['aNumber']);
+        $this->assertEquals(3.14159, $result['aNumber']);
     }
 
     public function testConfigInvalid()

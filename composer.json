@@ -32,5 +32,9 @@
         "psr-4": {
             "Winter\\LaravelConfigWriter\\Tests\\": "tests/"
         }
+    },
+    "scripts": {
+        "stan": "./vendor/bin/phpstan analyse",
+        "test": "./vendor/bin/phpunit"
     }
 }
