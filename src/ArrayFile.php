@@ -11,6 +11,7 @@ use PhpParser\Node\Expr\ConstFetch;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Name;
 use PhpParser\Node\Scalar\String_;
+use PhpParser\Node\Scalar\DNumber;
 use PhpParser\Node\Scalar\LNumber;
 use PhpParser\Node\Stmt;
 use PhpParser\Parser\Php7;
@@ -199,6 +200,8 @@ class ArrayFile extends DataFile implements DataFileInterface
                 return new ConstFetch(new Name($value ? 'true' : 'false'));
             case 'integer':
                 return new LNumber($value);
+            case 'double':
+                return new DNumber($value);
             case 'function':
                 return new FuncCall(
                     new Name($value->getName()),
